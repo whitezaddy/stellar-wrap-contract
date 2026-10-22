@@ -10,6 +10,7 @@
 * **No Force Pushing:** If you need to change something, add a new commit or squash locally before pushing.
 * **Code Style:** Ensure `cargo fmt` and `cargo clippy` pass before submitting.
 * **Doc Check:** Run `make doc` (or `RUSTDOCFLAGS="-D warnings" cargo doc --no-deps`) to verify documentation compiles without warnings.
+* **Security:** For security vulnerabilities, do not open a public issue. Follow the private disclosure process in [SECURITY.md](SECURITY.md).
 
 ### Markdown Formatting Decision
 
