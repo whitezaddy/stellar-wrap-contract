@@ -6,7 +6,7 @@ This document outlines our supported versions, vulnerability reporting process, 
 
 ## Supported Versions
 
-Only active development branches and recent releases receive security fixes. We strongly recommend all integrators run the latest supported version.
+Only active development branches and recent releases receive security fixes. Older tags are not patched; upgrade to the current release instead.
 
 | Version | Supported          |
 | ------- | ------------------ |
@@ -46,9 +46,10 @@ If GitHub Security Advisories are unavailable or you encounter issues submitting
 To help us triage and resolve the issue quickly, please include:
 
 - **Summary & Vulnerability Type**: A clear description of the vulnerability (e.g., unauthorized state mutation, signature replay, overflow/underflow, authorization bypass, reentrancy/invocation griefing, timelock evasion, bridge inconsistency).
-- **Affected Components**: Specific contracts, source files (`src/`, `proxy/`, `contracts/`), functions, or entrypoints.
-- **Severity Assessment**: Your assessment of the impact (Critical, High, Medium, Low) and affected assets or state invariants.
-- **Proof of Concept (PoC)**: Step-by-step reproduction instructions or code (such as a Rust unit test using `soroban-sdk::testutils` or standalone test script) demonstrating the vulnerability.
+- **Affected Components**: Specific contracts, source files (`src/`, `contracts/`), functions, or entrypoints (for example `src/signature.rs` or a `lib.rs` entrypoint).
+- **Reproduction Steps / Proof of Concept (PoC)**: Step-by-step reproduction instructions, transaction sequences, or test code (such as a Rust unit test using `soroban-sdk::testutils` or standalone test script) demonstrating the vulnerability.
+- **Expected Impact & Severity**: Your assessment of the impact (fund loss, unauthorized mint, denial of service, data exposure) and severity level (Critical, High, Medium, Low).
+- **Deployment Details**: The network and contract ID or WASM hash, if tested against a deployment.
 - **Potential Mitigations**: Any suggested fixes, defensive assertions, or mitigation strategies (if available).
 
 ## Response SLA
@@ -57,7 +58,7 @@ We commit to handling security reports professionally and expeditiously under th
 
 | Stage | Target Timeline | Details |
 | ----- | --------------- | ------- |
-| **Initial Acknowledgement** | Within 24–48 hours | Confirmation that the report was received and assigned to a maintainer for triage. |
+| **Initial Acknowledgement** | Within 24–48 hours (max 5 business days) | Confirmation that the report was received and assigned to a maintainer for triage. |
 | **Triage & Assessment** | Within 3–5 business days | Reproduction of the issue, severity assessment, and verification of whether the finding is in scope. |
 | **Status Updates** | Every 7 calendar days | Regular progress updates on investigation, impact analysis, and remediation development. |
 | **Fix Development & Testing** | Within 14–30 calendar days (varies by severity) | Developing, reviewing, and validating patches against invariant, integration, and fuzz test suites in a private advisory fork. |
@@ -73,24 +74,25 @@ The following smart contracts and codebases within this repository are in scope:
 
 - **Core Stellar Wrap Contract (`stellar_wrap_contract`)**:
   - Source code located in `src/`.
-  - Modules: `admin.rs`, `bridge.rs`, `burn.rs`, `governance.rs`, `lib.rs`, `merkle.rs`, `mint.rs`, `optout.rs`, `oracle.rs`, `queries.rs`, `revoke.rs`, `signature.rs`, `stake.rs`, `storage_accounting.rs`, `storage_types.rs`, `timelock.rs`, `token.rs`, `transfer.rs`, `ttl.rs`.
+  - Modules: `admin.rs`, `bridge.rs`, `burn.rs`, `governance.rs`, `guard.rs`, `lib.rs`, `merkle.rs`, `mint.rs`, `optout.rs`, `oracle.rs`, `queries.rs`, `revoke.rs`, `signature.rs`, `stake.rs`, `storage_accounting.rs`, `storage_types.rs`, `timelock.rs`, `token.rs`, `transfer.rs`, `ttl.rs`.
   - Core functionalities: wrap record minting, non-transferable soulbound validation, period verification, Ed25519 payload signature checks, bridge transfers/refunds, role governance, emergency pause mechanics, and timelocked actions.
-- **Stellar Wrap Proxy Contract (`stellar_wrap_proxy`)**:
-  - Source code located in `proxy/`.
-  - Atomic batching and multi-action delegation.
 - **Staking Extensions (`contracts/staking/`)**:
   - Source code located in `contracts/staking/`.
   - Staking mechanisms, lockups, and reward accounting.
-- **Deployment and Verification Scripts**:
+- **Deployment and Release Artifacts**:
+  - Release artifacts built by `.github/workflows/release.yml`.
   - Critical scripts located in `scripts/` directly governing release integrity (e.g., release artifact hash verification, WASM size bounds).
+- **Signing and Verification Flows**:
+  - Specifications and workflows documented in `docs/` (such as `docs/signing-payload.md` and `docs/adr/0001-in-guest-ed25519.md`).
 
 ### Out of Scope
 
 The following areas and vulnerability classes are outside the scope of this security policy:
 
-- **Known Public Issues**: Issues already tracked in the repository with the `security` label (e.g., issues documented in `SECURITY_AUDIT_CHECKLIST.md` and `SECURITY_RECOMMENDATIONS.md`, such as #647, #650, #651, #653, #672).
-- **Underlying Protocol and Dependencies**: Vulnerabilities originating in third-party crates, upstream Soroban SDK (`soroban-sdk`), Soroban host runtime (`soroban-env-host`), or Stellar Core/Stellar network consensus, unless directly caused by incorrect configuration or usage in this repository.
-- **Attacks Requiring Privileged Key Compromise**: Compromise of administrator private keys or physical theft of signers (while defense-in-depth timelock/governance improvements are welcomed, simple administrative misuse with valid credentials is out of scope).
+- **Known Public Issues**: Issues already tracked in the repository with the `security` label (e.g., issues documented in `docs/security/security-audit-checklist.md` and `docs/security/security-recommendations.md`, such as #647, #650, #651, #653, #672).
+- **Underlying Protocol and Dependencies**: Vulnerabilities originating in third-party crates, upstream Soroban SDK (`soroban-sdk`), Soroban host runtime (`soroban-env-host`), or Stellar Core/Stellar network consensus, unless directly caused by incorrect configuration or usage in this repository. Third-party dependencies with no reachable path in this contract should be reported upstream.
+- **Attacks Requiring Privileged Key Compromise**: Compromise of administrator private keys or physical theft of signers/machines (while defense-in-depth timelock/governance improvements are welcomed, simple administrative misuse with valid credentials is out of scope).
+- **Automated Scanner Reports**: Reports generated purely by automated scanners without a demonstrated, reproducible impact.
 - **Social Engineering & Phishing**: Phishing, social engineering, or physical attacks targeting developers, maintainers, or users.
 - **Volumetric Denial of Service**: Spamming public Stellar RPC endpoints or transactions to exhaust node resources without exploiting contract algorithmic complexity.
 - **Non-Security Issues**: Style guidelines, documentation typos, formatting, and test-only helper utilities that do not impact deployed bytecode.
@@ -116,6 +118,12 @@ We consider security research conducted in accordance with this policy to be aut
 - **Compliance**: Act in good faith and comply with all applicable local and international laws.
 
 If you follow these guidelines, we will work with you to understand and address the issue, and we will publicly acknowledge your contribution in the advisory (unless you prefer to remain anonymous).
+
+## Security Documentation
+
+- [Security recommendations](docs/security/security-recommendations.md)
+- [Security audit checklist](docs/security/security-audit-checklist.md)
+- [Mainnet release checklist](docs/operations/mainnet-release-checklist.md)
 
 ## Maintainer Task: Repository Configuration
 
